@@ -15,6 +15,18 @@ function toAnnual(row: any) {
   return null;
 }
 
+function percentile(sorted: number[], p: number) {
+  // p is 0..1
+  const n = sorted.length;
+  if (n === 0) return 0;
+  const idx = (n - 1) * p;
+  const lo = Math.floor(idx);
+  const hi = Math.ceil(idx);
+  if (lo === hi) return sorted[lo];
+  const weight = idx - lo;
+  return sorted[lo] * (1 - weight) + sorted[hi] * weight;
+}
+
 export default async function SalariesPage({
   searchParams,
 }: {
@@ -42,8 +54,6 @@ export default async function SalariesPage({
     .filter((v): v is number => typeof v === "number" && Number.isFinite(v));
 
   const count = annualized.length;
-
-  // ✅ K-anonymity threshold
   const MIN_COUNT = 5;
 
   return (
@@ -68,14 +78,25 @@ export default async function SalariesPage({
         ) : (
           (() => {
             const sorted = [...annualized].sort((a, b) => a - b);
-            const median = sorted[Math.floor(sorted.length / 2)];
+            const p25 = percentile(sorted, 0.25);
+            const med = percentile(sorted, 0.5);
+            const p75 = percentile(sorted, 0.75);
 
             return (
               <>
                 <p className="text-slate-600">Median Annualized Pay</p>
                 <h2 className="text-4xl font-bold text-slate-900 mt-2">
-                  ${median.toLocaleString()}
+                  ${Math.round(med).toLocaleString()}
                 </h2>
+
+                <p className="mt-3 text-sm text-slate-600">
+                  25th–75th percentile:{" "}
+                  <span className="font-semibold">
+                    ${Math.round(p25).toLocaleString()} – $
+                    {Math.round(p75).toLocaleString()}
+                  </span>
+                </p>
+
                 <p className="mt-2 text-xs text-slate-400">
                   Based on {count} submissions
                 </p>
