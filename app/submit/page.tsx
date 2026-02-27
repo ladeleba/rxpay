@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { supabase } from "../lib/supabaseClient";
 
 export default function SubmitPage() {
   const [role, setRole] = useState("retail");
@@ -10,10 +11,45 @@ export default function SubmitPage() {
   const [hourlyRate, setHourlyRate] = useState("");
   const [annualSalary, setAnnualSalary] = useState("");
   const [employer, setEmployer] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    alert("Submitted (next step: save to database)");
+
+    if (!years || (payType === "hourly" && !hourlyRate) || (payType === "salary" && !annualSalary)) {
+      alert("Please complete all required fields.");
+      return;
+    }
+
+    setLoading(true);
+
+    const payload: any = {
+      role,
+      state: stateCode,
+      years_experience: Number(years),
+      pay_type: payType,
+      employer: employer.trim() || null,
+      hourly_rate: payType === "hourly" ? Number(hourlyRate) : null,
+      annual_salary: payType === "salary" ? Number(annualSalary) : null,
+    };
+
+    const { error } = await supabase
+      .from("salary_submissions")
+      .insert(payload);
+
+    setLoading(false);
+
+    if (error) {
+      alert(`Error: ${error.message}`);
+      return;
+    }
+
+    alert("Submitted successfully 🎉");
+
+    setYears("");
+    setHourlyRate("");
+    setAnnualSalary("");
+    setEmployer("");
   };
 
   return (
@@ -124,8 +160,11 @@ export default function SubmitPage() {
           />
         </div>
 
-        <button className="w-full rounded-xl bg-slate-900 text-white py-3 font-semibold">
-          Submit Anonymously
+        <button
+          disabled={loading}
+          className="w-full rounded-xl bg-slate-900 text-white py-3 font-semibold disabled:opacity-50"
+        >
+          {loading ? "Submitting..." : "Submit Anonymously"}
         </button>
       </form>
     </main>
