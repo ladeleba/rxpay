@@ -1,9 +1,11 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 export default function Home() {
   const router = useRouter();
+  const [stateCode, setStateCode] = useState("MD");
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
@@ -17,7 +19,11 @@ export default function Home() {
           Select your state
         </label>
 
-        <select className="mt-2 w-full rounded-xl border border-slate-200 bg-white p-3">
+        <select
+          value={stateCode}
+          onChange={(e) => setStateCode(e.target.value)}
+          className="mt-2 w-full rounded-xl border border-slate-200 bg-white p-3"
+        >
           <option value="MD">Maryland</option>
           <option value="DC">District of Columbia</option>
           <option value="VA">Virginia</option>
@@ -26,7 +32,7 @@ export default function Home() {
         </select>
 
         <button
-          onClick={() => router.push("/salaries")}
+          onClick={() => router.push(`/salaries?state=${stateCode}`)}
           className="mt-5 w-full rounded-xl bg-slate-900 text-white py-3 font-semibold"
         >
           View Insights
