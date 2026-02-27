@@ -6,6 +6,7 @@ import { useState } from "react";
 export default function Home() {
   const router = useRouter();
   const [stateCode, setStateCode] = useState("MD");
+  const [role, setRole] = useState("retail");
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
@@ -18,7 +19,6 @@ export default function Home() {
         <label className="block mt-8 text-sm font-medium text-slate-700">
           Select your state
         </label>
-
         <select
           value={stateCode}
           onChange={(e) => setStateCode(e.target.value)}
@@ -31,8 +31,25 @@ export default function Home() {
           <option value="TX">Texas</option>
         </select>
 
+        <label className="block mt-5 text-sm font-medium text-slate-700">
+          Select role type
+        </label>
+        <select
+          value={role}
+          onChange={(e) => setRole(e.target.value)}
+          className="mt-2 w-full rounded-xl border border-slate-200 bg-white p-3"
+        >
+          <option value="retail">Retail</option>
+          <option value="hospital">Hospital</option>
+          <option value="industry">Industry</option>
+          <option value="managed_care">Managed Care</option>
+          <option value="ambulatory">Ambulatory</option>
+          <option value="academia">Academia</option>
+          <option value="other">Other</option>
+        </select>
+
         <button
-          onClick={() => router.push(`/salaries?state=${stateCode}`)}
+          onClick={() => router.push(`/salaries?state=${stateCode}&role=${role}`)}
           className="mt-5 w-full rounded-xl bg-slate-900 text-white py-3 font-semibold"
         >
           View Insights

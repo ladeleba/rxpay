@@ -16,29 +16,30 @@ function toAnnual(row: any) {
 }
 
 function percentile(sorted: number[], p: number) {
-  // p is 0..1
   const n = sorted.length;
   if (n === 0) return 0;
   const idx = (n - 1) * p;
   const lo = Math.floor(idx);
   const hi = Math.ceil(idx);
   if (lo === hi) return sorted[lo];
-  const weight = idx - lo;
-  return sorted[lo] * (1 - weight) + sorted[hi] * weight;
+  const w = idx - lo;
+  return sorted[lo] * (1 - w) + sorted[hi] * w;
 }
 
 export default async function SalariesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ state?: string }>;
+  searchParams: Promise<{ state?: string; role?: string }>;
 }) {
-  const { state } = await searchParams;
+  const { state, role } = await searchParams;
   const stateCode = (state || "MD").toUpperCase();
+  const roleType = (role || "retail").toLowerCase();
 
   const { data, error } = await supabase
     .from("salary_submissions")
     .select("*")
-    .eq("state", stateCode);
+    .eq("state", stateCode)
+    .eq("role", roleType);
 
   if (error) {
     return (
@@ -59,14 +60,16 @@ export default async function SalariesPage({
   return (
     <main className="min-h-screen bg-slate-50 p-8">
       <h1 className="text-3xl font-bold text-slate-900">Salary Insights</h1>
-      <p className="mt-2 text-slate-600">Showing results for: {stateCode}</p>
+      <p className="mt-2 text-slate-600">
+        Showing: {stateCode} • {roleType.replace("_", " ")}
+      </p>
 
       <div className="mt-8 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         {count < MIN_COUNT ? (
           <>
             <p className="text-slate-600">Not enough data yet</p>
             <h2 className="text-2xl font-bold text-slate-900 mt-2">
-              Need {MIN_COUNT}+ submissions to show salary stats
+              Need {MIN_COUNT}+ submissions to show stats
             </h2>
             <p className="mt-3 text-sm text-slate-500">
               Current submissions: <span className="font-semibold">{count}</span>
