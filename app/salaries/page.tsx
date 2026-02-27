@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import SalaryGrowthChart from "./SalaryGrowthChart";
+import CopyLinkButton from "../components/CopyLinkButton";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -80,7 +81,6 @@ export default async function SalariesPage({
     bucketMap[bucket].push(annual);
   });
 
-  // Build chart points (only buckets with 5+ submissions)
   const chartData = BUCKET_ORDER.map((bucket) => {
     const arr = bucketMap[bucket] || [];
     if (arr.length < MIN_COUNT) return null;
@@ -96,7 +96,7 @@ export default async function SalariesPage({
         {stateCode} • {roleType.replace("_", " ")}
       </p>
 
-      {/* Chart first */}
+      {/* Chart Section */}
       <div className="mt-8">
         {chartData.length > 0 ? (
           <SalaryGrowthChart data={chartData} />
@@ -104,19 +104,13 @@ export default async function SalariesPage({
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
             <h2 className="text-xl font-semibold text-slate-900">Salary growth curve</h2>
             <p className="mt-2 text-slate-600">
-              Not enough bucket-level data yet. Each experience bucket needs {MIN_COUNT}+ submissions.
+              Each experience bucket needs {MIN_COUNT}+ submissions to unlock.
             </p>
-            <a
-              href={`/submit?state=${stateCode}&role=${roleType}`}
-              className="inline-block mt-5 rounded-xl bg-slate-900 px-4 py-3 text-white font-semibold"
-            >
-              Submit your salary to unlock the chart
-            </a>
           </div>
         )}
       </div>
 
-      {/* Bucket cards */}
+      {/* Bucket Cards */}
       <div className="mt-8 space-y-6">
         {BUCKET_ORDER.map((bucketName) => {
           const salaries = bucketMap[bucketName] || [];
@@ -129,15 +123,42 @@ export default async function SalariesPage({
                 className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200"
               >
                 <h2 className="text-xl font-semibold">{bucketName}</h2>
-                <p className="mt-3 text-slate-600">Need {MIN_COUNT}+ submissions</p>
-                <p className="text-sm text-slate-500">Current: {count}</p>
+
+                <p className="mt-3 text-slate-600">
+                  Unlock progress:{" "}
+                  <span className="font-semibold">
+                    {count}/{MIN_COUNT}
+                  </span>
+                </p>
+
+                <div className="mt-3 h-2 w-full rounded-full bg-slate-100 overflow-hidden">
+                  <div
+                    className="h-2 bg-slate-900"
+                    style={{ width: `${Math.min(100, (count / MIN_COUNT) * 100)}%` }}
+                  />
+                </div>
+
+                <p className="mt-4 text-sm text-slate-600">
+                  Help unlock this bucket by sharing with colleagues.
+                </p>
 
                 <a
                   href={`/submit?state=${stateCode}&role=${roleType}`}
                   className="inline-block mt-5 rounded-xl bg-slate-900 px-4 py-3 text-white font-semibold"
                 >
-                  Submit your salary for this bucket
+                  Submit your salary
                 </a>
+
+                <div className="mt-4 flex flex-wrap gap-3">
+                  <CopyLinkButton
+                    url={`http://localhost:3000/submit?state=${stateCode}&role=${roleType}`}
+                    label="Copy submit link"
+                  />
+                  <CopyLinkButton
+                    url={`http://localhost:3000/salaries?state=${stateCode}&role=${roleType}`}
+                    label="Copy insights link"
+                  />
+                </div>
               </div>
             );
           }
@@ -162,11 +183,14 @@ export default async function SalariesPage({
               <p className="mt-2 text-sm text-slate-600">
                 25th–75th percentile:{" "}
                 <span className="font-semibold">
-                  ${Math.round(p25).toLocaleString()} – ${Math.round(p75).toLocaleString()}
+                  ${Math.round(p25).toLocaleString()} – $
+                  {Math.round(p75).toLocaleString()}
                 </span>
               </p>
 
-              <p className="mt-2 text-xs text-slate-400">Based on {count} submissions</p>
+              <p className="mt-2 text-xs text-slate-400">
+                Based on {count} submissions
+              </p>
             </div>
           );
         })}
