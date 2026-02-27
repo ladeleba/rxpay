@@ -1,4 +1,10 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+
 export default function Home() {
+  const router = useRouter();
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-slate-50 p-6">
       <div className="w-full max-w-md">
@@ -19,7 +25,10 @@ export default function Home() {
           <option value="TX">Texas</option>
         </select>
 
-        <button className="mt-5 w-full rounded-xl bg-slate-900 text-white py-3 font-semibold">
+        <button
+          onClick={() => router.push("/salaries")}
+          className="mt-5 w-full rounded-xl bg-slate-900 text-white py-3 font-semibold"
+        >
           View Insights
         </button>
 
