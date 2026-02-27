@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "../lib/supabaseClient";
 
 export default function SubmitPage() {
+  const searchParams = useSearchParams();
+
   const [role, setRole] = useState("retail");
   const [stateCode, setStateCode] = useState("MD");
   const [years, setYears] = useState("");
@@ -13,13 +16,21 @@ export default function SubmitPage() {
   const [employer, setEmployer] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // ✅ Autofill role/state from URL: /submit?state=MD&role=retail
+  useEffect(() => {
+    const s = searchParams.get("state");
+    const r = searchParams.get("role");
+
+    if (s && s.length <= 3) setStateCode(s.toUpperCase());
+    if (r) setRole(r.toLowerCase());
+  }, [searchParams]);
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!years || (payType === "hourly" && !hourlyRate) || (payType === "salary" && !annualSalary)) {
-      alert("Please complete all required fields.");
-      return;
-    }
+    if (!years) return alert("Please enter years of experience.");
+    if (payType === "hourly" && !hourlyRate) return alert("Please enter hourly rate.");
+    if (payType === "salary" && !annualSalary) return alert("Please enter annual salary.");
 
     setLoading(true);
 
@@ -33,9 +44,7 @@ export default function SubmitPage() {
       annual_salary: payType === "salary" ? Number(annualSalary) : null,
     };
 
-    const { error } = await supabase
-      .from("salary_submissions")
-      .insert(payload);
+    const { error } = await supabase.from("salary_submissions").insert(payload);
 
     setLoading(false);
 
@@ -45,7 +54,6 @@ export default function SubmitPage() {
     }
 
     alert("Submitted successfully 🎉");
-
     setYears("");
     setHourlyRate("");
     setAnnualSalary("");
@@ -122,9 +130,7 @@ export default function SubmitPage() {
 
         {payType === "hourly" ? (
           <div>
-            <label className="block text-sm font-medium text-slate-700">
-              Hourly Rate
-            </label>
+            <label className="block text-sm font-medium text-slate-700">Hourly Rate</label>
             <input
               value={hourlyRate}
               onChange={(e) => setHourlyRate(e.target.value)}
@@ -135,9 +141,7 @@ export default function SubmitPage() {
           </div>
         ) : (
           <div>
-            <label className="block text-sm font-medium text-slate-700">
-              Annual Salary
-            </label>
+            <label className="block text-sm font-medium text-slate-700">Annual Salary</label>
             <input
               value={annualSalary}
               onChange={(e) => setAnnualSalary(e.target.value)}
