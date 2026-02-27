@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { supabase } from "../lib/supabaseClient";
+import { supabaseClient } from "../lib/supabaseClient";
 
 export default function SubmitPage() {
   const searchParams = useSearchParams();
@@ -16,12 +16,12 @@ export default function SubmitPage() {
   const [employer, setEmployer] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ✅ Autofill role/state from URL: /submit?state=MD&role=retail
+  // Autofill from URL: /submit?state=MD&role=retail
   useEffect(() => {
     const s = searchParams.get("state");
     const r = searchParams.get("role");
 
-    if (s && s.length <= 3) setStateCode(s.toUpperCase());
+    if (s) setStateCode(s.toUpperCase());
     if (r) setRole(r.toLowerCase());
   }, [searchParams]);
 
@@ -29,42 +29,60 @@ export default function SubmitPage() {
     e.preventDefault();
 
     if (!years) return alert("Please enter years of experience.");
-    if (payType === "hourly" && !hourlyRate) return alert("Please enter hourly rate.");
-    if (payType === "salary" && !annualSalary) return alert("Please enter annual salary.");
+    if (payType === "hourly" && !hourlyRate)
+      return alert("Please enter hourly rate.");
+    if (payType === "salary" && !annualSalary)
+      return alert("Please enter annual salary.");
 
     setLoading(true);
 
-    const payload: any = {
-      role,
-      state: stateCode,
-      years_experience: Number(years),
-      pay_type: payType,
-      employer: employer.trim() || null,
-      hourly_rate: payType === "hourly" ? Number(hourlyRate) : null,
-      annual_salary: payType === "salary" ? Number(annualSalary) : null,
-    };
+    try {
+      const supabase = supabaseClient();
 
-    const { error } = await supabase.from("salary_submissions").insert(payload);
+      const payload: any = {
+        role,
+        state: stateCode,
+        years_experience: Number(years),
+        pay_type: payType,
+        employer: employer.trim() || null,
+        hourly_rate:
+          payType === "hourly" ? Number(hourlyRate) : null,
+        annual_salary:
+          payType === "salary" ? Number(annualSalary) : null,
+      };
 
-    setLoading(false);
+      const { error } = await supabase
+        .from("salary_submissions")
+        .insert(payload);
 
-    if (error) {
-      alert(`Error: ${error.message}`);
-      return;
+      if (error) {
+        alert(`Error: ${error.message}`);
+        setLoading(false);
+        return;
+      }
+
+      alert("Submitted successfully 🎉");
+
+      setYears("");
+      setHourlyRate("");
+      setAnnualSalary("");
+      setEmployer("");
+    } catch (err: any) {
+      alert("Submission failed. Check configuration.");
+      console.error(err);
     }
 
-    alert("Submitted successfully 🎉");
-    setYears("");
-    setHourlyRate("");
-    setAnnualSalary("");
-    setEmployer("");
+    setLoading(false);
   };
 
   return (
     <main className="min-h-screen bg-slate-50 p-8">
-      <h1 className="text-3xl font-bold text-slate-900">Submit Salary</h1>
+      <h1 className="text-3xl font-bold text-slate-900">
+        Submit Salary
+      </h1>
       <p className="mt-2 text-slate-600">
-        Anonymous. Employer is optional and only shown when 5+ submissions exist.
+        Anonymous. Employer is optional and only shown when
+        5+ submissions exist.
       </p>
 
       <form
@@ -72,7 +90,9 @@ export default function SubmitPage() {
         className="mt-8 max-w-xl bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4"
       >
         <div>
-          <label className="block text-sm font-medium text-slate-700">Role</label>
+          <label className="block text-sm font-medium text-slate-700">
+            Role
+          </label>
           <select
             value={role}
             onChange={(e) => setRole(e.target.value)}
@@ -89,7 +109,9 @@ export default function SubmitPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">State</label>
+          <label className="block text-sm font-medium text-slate-700">
+            State
+          </label>
           <select
             value={stateCode}
             onChange={(e) => setStateCode(e.target.value)}
@@ -117,10 +139,14 @@ export default function SubmitPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">Pay Type</label>
+          <label className="block text-sm font-medium text-slate-700">
+            Pay Type
+          </label>
           <select
             value={payType}
-            onChange={(e) => setPayType(e.target.value as any)}
+            onChange={(e) =>
+              setPayType(e.target.value as "hourly" | "salary")
+            }
             className="mt-2 w-full rounded-xl border border-slate-200 bg-white p-3"
           >
             <option value="hourly">Hourly</option>
@@ -130,7 +156,9 @@ export default function SubmitPage() {
 
         {payType === "hourly" ? (
           <div>
-            <label className="block text-sm font-medium text-slate-700">Hourly Rate</label>
+            <label className="block text-sm font-medium text-slate-700">
+              Hourly Rate
+            </label>
             <input
               value={hourlyRate}
               onChange={(e) => setHourlyRate(e.target.value)}
@@ -141,7 +169,9 @@ export default function SubmitPage() {
           </div>
         ) : (
           <div>
-            <label className="block text-sm font-medium text-slate-700">Annual Salary</label>
+            <label className="block text-sm font-medium text-slate-700">
+              Annual Salary
+            </label>
             <input
               value={annualSalary}
               onChange={(e) => setAnnualSalary(e.target.value)}
