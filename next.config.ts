@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // ✅ Keep this empty/minimal for Vercel
 };
 
 export default nextConfig;
