@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import SalaryGrowthChart from "./SalaryGrowthChart";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,6 +34,8 @@ function getBucket(years: number) {
   return "10+ years";
 }
 
+const BUCKET_ORDER = ["0–2 years", "3–5 years", "6–10 years", "10+ years"] as const;
+
 export default async function SalariesPage({
   searchParams,
 }: {
@@ -49,7 +52,12 @@ export default async function SalariesPage({
     .eq("role", roleType);
 
   if (error) {
-    return <div>Error loading data</div>;
+    return (
+      <main className="min-h-screen bg-slate-50 p-8">
+        <h1 className="text-3xl font-bold text-slate-900">Salary Insights</h1>
+        <p className="mt-3 text-red-600">Error: {error.message}</p>
+      </main>
+    );
   }
 
   const MIN_COUNT = 5;
@@ -63,11 +71,23 @@ export default async function SalariesPage({
 
   (data || []).forEach((row: any) => {
     const annual = toAnnual(row);
-    if (!annual || !row.years_experience) return;
+    const yrs = Number(row?.years_experience);
 
-    const bucket = getBucket(Number(row.years_experience));
+    if (!Number.isFinite(yrs)) return;
+    if (annual == null || !Number.isFinite(annual)) return;
+
+    const bucket = getBucket(yrs);
     bucketMap[bucket].push(annual);
   });
+
+  // Build chart points (only buckets with 5+ submissions)
+  const chartData = BUCKET_ORDER.map((bucket) => {
+    const arr = bucketMap[bucket] || [];
+    if (arr.length < MIN_COUNT) return null;
+    const sorted = [...arr].sort((a, b) => a - b);
+    const med = percentile(sorted, 0.5);
+    return { bucket, median: Math.round(med), count: arr.length };
+  }).filter(Boolean) as { bucket: string; median: number; count: number }[];
 
   return (
     <main className="min-h-screen bg-slate-50 p-8">
@@ -76,8 +96,30 @@ export default async function SalariesPage({
         {stateCode} • {roleType.replace("_", " ")}
       </p>
 
+      {/* Chart first */}
+      <div className="mt-8">
+        {chartData.length > 0 ? (
+          <SalaryGrowthChart data={chartData} />
+        ) : (
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-xl font-semibold text-slate-900">Salary growth curve</h2>
+            <p className="mt-2 text-slate-600">
+              Not enough bucket-level data yet. Each experience bucket needs {MIN_COUNT}+ submissions.
+            </p>
+            <a
+              href={`/submit?state=${stateCode}&role=${roleType}`}
+              className="inline-block mt-5 rounded-xl bg-slate-900 px-4 py-3 text-white font-semibold"
+            >
+              Submit your salary to unlock the chart
+            </a>
+          </div>
+        )}
+      </div>
+
+      {/* Bucket cards */}
       <div className="mt-8 space-y-6">
-        {Object.entries(bucketMap).map(([bucketName, salaries]) => {
+        {BUCKET_ORDER.map((bucketName) => {
+          const salaries = bucketMap[bucketName] || [];
           const count = salaries.length;
 
           if (count < MIN_COUNT) {
@@ -87,12 +129,15 @@ export default async function SalariesPage({
                 className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200"
               >
                 <h2 className="text-xl font-semibold">{bucketName}</h2>
-                <p className="mt-3 text-slate-600">
-                  Need {MIN_COUNT}+ submissions
-                </p>
-                <p className="text-sm text-slate-500">
-                  Current: {count}
-                </p>
+                <p className="mt-3 text-slate-600">Need {MIN_COUNT}+ submissions</p>
+                <p className="text-sm text-slate-500">Current: {count}</p>
+
+                <a
+                  href={`/submit?state=${stateCode}&role=${roleType}`}
+                  className="inline-block mt-5 rounded-xl bg-slate-900 px-4 py-3 text-white font-semibold"
+                >
+                  Submit your salary for this bucket
+                </a>
               </div>
             );
           }
@@ -117,14 +162,11 @@ export default async function SalariesPage({
               <p className="mt-2 text-sm text-slate-600">
                 25th–75th percentile:{" "}
                 <span className="font-semibold">
-                  ${Math.round(p25).toLocaleString()} – $
-                  {Math.round(p75).toLocaleString()}
+                  ${Math.round(p25).toLocaleString()} – ${Math.round(p75).toLocaleString()}
                 </span>
               </p>
 
-              <p className="mt-2 text-xs text-slate-400">
-                Based on {count} submissions
-              </p>
+              <p className="mt-2 text-xs text-slate-400">Based on {count} submissions</p>
             </div>
           );
         })}
