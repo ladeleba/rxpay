@@ -3,15 +3,19 @@
 import { useState } from "react";
 
 export default function CopyLinkButton({
-  url,
+  path,
   label = "Copy link",
 }: {
-  url: string;
+  path: string; // example: "/submit?state=MD&role=retail"
   label?: string;
 }) {
   const [copied, setCopied] = useState(false);
 
   const onCopy = async () => {
+    const base =
+      process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "http://localhost:3000";
+    const url = `${base}${path.startsWith("/") ? "" : "/"}${path}`;
+
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);

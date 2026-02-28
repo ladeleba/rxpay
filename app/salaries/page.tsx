@@ -151,11 +151,11 @@ export default async function SalariesPage({
 
                 <div className="mt-4 flex flex-wrap gap-3">
                   <CopyLinkButton
-                    url={`http://localhost:3000/submit?state=${stateCode}&role=${roleType}`}
+                    path={`/submit?state=${stateCode}&role=${roleType}`}
                     label="Copy submit link"
                   />
                   <CopyLinkButton
-                    url={`http://localhost:3000/salaries?state=${stateCode}&role=${roleType}`}
+                    path={`/salaries?state=${stateCode}&role=${roleType}`}
                     label="Copy insights link"
                   />
                 </div>
@@ -183,8 +183,7 @@ export default async function SalariesPage({
               <p className="mt-2 text-sm text-slate-600">
                 25th–75th percentile:{" "}
                 <span className="font-semibold">
-                  ${Math.round(p25).toLocaleString()} – $
-                  {Math.round(p75).toLocaleString()}
+                  ${Math.round(p25).toLocaleString()} – ${Math.round(p75).toLocaleString()}
                 </span>
               </p>
 
