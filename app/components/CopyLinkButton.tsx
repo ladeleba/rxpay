@@ -6,14 +6,17 @@ export default function CopyLinkButton({
   path,
   label = "Copy link",
 }: {
-  path: string; // example: "/submit?state=MD&role=retail"
+  path: string; // "/submit?state=MD&role=retail"
   label?: string;
 }) {
   const [copied, setCopied] = useState(false);
 
   const onCopy = async () => {
     const base =
-      process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "http://localhost:3000";
+      typeof window !== "undefined" && window.location?.origin
+        ? window.location.origin
+        : "http://localhost:3000";
+
     const url = `${base}${path.startsWith("/") ? "" : "/"}${path}`;
 
     try {
